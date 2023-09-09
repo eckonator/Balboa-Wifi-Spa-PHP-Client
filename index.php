@@ -1,7 +1,7 @@
 <?php
 include('SpaClient.php');
 
-$spaClient = new SpaClient('192.168.178.127');
+$spaClient = new SpaClient('192.168.178.xxx');
 sleep(1);
 header('Content-Type: application/json; charset=utf-8');
 
