@@ -19,9 +19,7 @@ class SpaClient
     private bool $priming = false;
     private string $timeScale = "12 Hr";
     private bool $heating = false;
-
     private array $status = [];
-
     private string $spaIp;
 
     public function __construct($spaIp)
