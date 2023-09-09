@@ -41,7 +41,7 @@ class SpaClient
 
     public function handleStatusUpdate($byteArray): void
     {
-        $this->priming = (ord($byteArray[1]) & 0x01) == 0;
+        $this->priming = (ord($byteArray[1]) & 0x01) == 1;
         $this->hour = ord($byteArray[3]);
         $this->minute = ord($byteArray[4]);
         $heatingModes = array("Ready", "Rest", "Ready in Rest");
