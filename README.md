@@ -14,7 +14,7 @@ $spaClient = new SpaClient('192.168.178.127');
 
 Set spa temperature to 20°C
 ````
-http://<your-host>/path/to/spa/?setTemperature=20
+http://<your-host>/path/to/spa/?setTemp=20
 ````
 
 Run spa pump1 low

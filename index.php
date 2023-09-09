@@ -1,13 +1,13 @@
 <?php
 include('SpaClient.php');
 
-$spaClient = new SpaClient('192.168.178.xxx');
+$spaClient = new SpaClient('192.168.178.127');
 sleep(1);
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if(isset($_GET['setTemperature'])) {
-        $action = (float) $_GET['setTemperature'];
+    if(isset($_GET['setTemp'])) {
+        $action = (float) $_GET['setTemp'];
         if (($action >= 10 && $action <= 37) && ($action * 10 % 5 == 0)) {
             $spaClient->setTemperature($action);
         }

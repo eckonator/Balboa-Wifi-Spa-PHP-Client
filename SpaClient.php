@@ -225,14 +225,17 @@ class SpaClient
     public function setTemperature(float $temp)
     {
         sleep(1);
-        $this->readAllMsg(); // Read status first to get current temperature unit
-        if ($this->tempScale == "Celsius") {
-            $dec = $temp / 2.0;
-        } else {
-            $dec = 1.0 * $temp;
+        $this->readAllMsg(); // Read status first to get current temperature state
+        if ($this->setTemp == $temp) {
+            return;
         }
-        $this->setTemp = intval($dec);
-        $this->sendMessage("\x0a\xbf\x20", chr($this->setTemp));
+        if ($this->tempScale == "Celcius") {
+            $dec = $temp * 2;
+        } else {
+            $dec = $temp;
+        }
+        $this->setTemp = $temp;
+        $this->sendMessage("\x0a\xbf\x20", chr($dec));
     }
 
     public function setLight($value) {
