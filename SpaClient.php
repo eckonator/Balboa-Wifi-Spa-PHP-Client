@@ -21,6 +21,8 @@ class SpaClient
     private bool $heating = false;
     private array $status = [];
     private string $spaIp;
+    private int $faultCode = 0;
+    private string $faultMessage = '';
 
     public function __construct($spaIp)
     {
@@ -67,6 +69,34 @@ class SpaClient
             $this->currentTemp = 1.0 * ord($byteArray[2]);
             $this->setTemp = 1.0 * ord($byteArray[20]);
         }
+        $this->faultCode = ord($byteArray[7]);
+        $this->faultMessage = $this->faultCodeToString(ord($byteArray[7]));
+    }
+
+    private function faultCodeToString($code): string
+    {
+        if ($code == 0) return "Spa-Daten wurden noch nicht synchronisiert";
+        if ($code == 3) return "Spa funktioniert einwandfrei - keine Fehler im Speicher";
+        if ($code == 15) return "Sensoren sind möglicherweise nicht synchronisiert";
+        if ($code == 16) return "Geringer Wasserfluss";
+        if ($code == 17) return "Kein Wasserfluss";
+        if ($code == 19) return "Priming (dies ist eigentlich kein Fehler - Ihr Spa wurde kürzlich eingeschaltet)";
+        if ($code == 20) return "Die Uhr ist ausgefallen";
+        if ($code == 21) return "Die Einstellungen wurden zurückgesetzt (Fehler im dauerhaften Speicher)";
+        if ($code == 22) return "Fehler im Programmspeicher";
+        if ($code == 26) return "Sensoren sind nicht synchronisiert - rufen Sie den Service an";
+        if ($code == 27) return "Der Heizstab ist trocken";
+        if ($code == 28) return "Der Heizstab könnte trocken sein";
+        if ($code == 29) return "Das Wasser ist zu heiß";
+        if ($code == 30) return "Der Heizstab ist zu heiß";
+        if ($code == 31) return "Fehler bei Sensor A";
+        if ($code == 32) return "Fehler bei Sensor B";
+        if ($code == 33) return "Sicherheitsabschaltung - Blockierung der Pumpensaugleitung";
+        if ($code == 34) return "Eine Pumpe könnte feststecken";
+        if ($code == 35) return "Heißer Fehler";
+        if ($code == 36) return "Der GFCI-Test ist fehlgeschlagen";
+        if ($code == 37) return "Haltemodus aktiviert (dies ist eigentlich kein Fehler)";
+        return "Unbekannter Fehlercode - Überprüfen Sie die Balboa-Spa-Handbücher";
     }
 
     public function getTemp(): int
@@ -118,6 +148,8 @@ class SpaClient
         $this->status["pump1"] = $this->pump1;
         $this->status["pump2"] = $this->pump2;
         $this->status["light"] = $this->light;
+        $this->status["faultCode"] = $this->faultCode;
+        $this->status["faultMessage"] = $this->faultMessage;
         return $this->status;
     }
 
@@ -131,6 +163,8 @@ class SpaClient
         $this->status["pump1"] = ($this->pump1 === "High") ? 2 : (($this->pump1 === "Low") ? 1 : 0);
         $this->status["pump2"] = ($this->pump2 === "High") ? 2 : (($this->pump2 === "Low") ? 1 : 0);
         $this->status["light"] = ($this->light === true) ? 1 : 0;
+        $this->status["faultCode"] = $this->faultCode;
+        $this->status["faultMessage"] = $this->faultMessage;
         return $this->status;
     }
 
@@ -203,7 +237,7 @@ class SpaClient
         }
     }
 
-    private function sendMessage($type, $payload)
+    private function sendMessage($type, $payload): void
     {
         $length = 5 + strlen($payload);
         $checksum = $this->computeChecksum(chr($length), $type . $payload);
@@ -212,17 +246,17 @@ class SpaClient
         socket_write($this->socket, $message);
     }
 
-    public function sendConfigRequest()
+    public function sendConfigRequest(): void
     {
         $this->sendMessage("\x0a\xbf\x04", '');
     }
 
-    public function sendToggleMessage($item)
+    public function sendToggleMessage($item): void
     {
         $this->sendMessage("\x0a\xbf\x11", chr($item) . "\x00");
     }
 
-    public function setTemperature(float $temp)
+    public function setTemperature(float $temp): void
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current temperature state
@@ -238,7 +272,8 @@ class SpaClient
         $this->sendMessage("\x0a\xbf\x20", chr($dec));
     }
 
-    public function setLight($value) {
+    public function setLight($value): void
+    {
         if ($this->light == $value) {
             return;
         }
@@ -246,14 +281,14 @@ class SpaClient
         $this->light = $value;
     }
 
-    public function setNewTime($newHour, $newMinute)
+    public function setNewTime($newHour, $newMinute): void
     {
         sleep(1);
         $this->newTime = chr(intval($newHour)) . chr(intval($newMinute));
         $this->sendMessage("\x0a\xbf\x21", $this->newTime);
     }
 
-    public function setPump1($value)
+    public function setPump1($value): void
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump1 state
@@ -278,7 +313,7 @@ class SpaClient
         $this->pump1 = $value;
     }
 
-    public function setPump2($value)
+    public function setPump2($value): void
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump2 state
