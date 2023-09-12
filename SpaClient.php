@@ -11,13 +11,13 @@ class SpaClient
     private int $hour = 12;
     private int $minute = 0;
     private string $heatingMode = "";
-    private string $tempScale = "";
+    private string $tempScale = "Celcius";
     private string $tempRange = "";
-    private string $pump1 = "";
-    private string $pump2 = "";
-    private float $setTemp = 0;
+    private string $pump1 = "Off";
+    private string $pump2 = "Off";
+    private float $setTemp = 10;
     private bool $priming = false;
-    private string $timeScale = "12 Hr";
+    private string $timeScale = "24 Hr";
     private bool $heating = false;
     private array $status = [];
     private string $spaIp;
