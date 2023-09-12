@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $spaClient->setLight(true);
                 break;
             default:
-                $spaClient->setPump2(false);
+                $spaClient->setLight(false);
                 break;
         }
     }

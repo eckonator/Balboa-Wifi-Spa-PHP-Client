@@ -22,7 +22,7 @@ class SpaClient
     private array $status = [];
     private string $spaIp;
     private int $faultCode = 0;
-    private string $faultMessage = '';
+    private string $faultMessage = "Spa-Daten wurden noch nicht synchronisiert";
 
     public function __construct($spaIp)
     {
