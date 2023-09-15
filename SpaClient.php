@@ -260,10 +260,7 @@ class SpaClient
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current temperature state
-        if ($this->setTemp == $temp) {
-            return;
-        }
-        if ($this->faultCode == 0) {
+        if ($this->setTemp == $temp || $this->faultCode !== 3) {
             return;
         }
         if ($this->tempScale == "Celcius") {
@@ -277,10 +274,8 @@ class SpaClient
 
     public function setLight($value): void
     {
-        if ($this->light == $value) {
-            return;
-        }
-        if ($this->faultCode == 0) {
+        sleep(1);
+        if ($this->light == $value || $this->faultCode !== 3) {
             return;
         }
         $this->sendToggleMessage(0x11);
@@ -290,7 +285,7 @@ class SpaClient
     public function setNewTime($newHour, $newMinute): void
     {
         sleep(1);
-        if ($this->faultCode == 0) {
+        if ($this->faultCode !== 3) {
             return;
         }
         $this->newTime = chr(intval($newHour)) . chr(intval($newMinute));
@@ -301,10 +296,7 @@ class SpaClient
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump1 state
-        if ($this->pump1 == $value) {
-            return;
-        }
-        if ($this->faultCode == 0) {
+        if ($this->pump1 == $value || $this->faultCode !== 3) {
             return;
         }
         if ($value == "High" && $this->pump1 == "Off") {
@@ -329,10 +321,7 @@ class SpaClient
     {
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump2 state
-        if ($this->pump2 == $value) {
-            return;
-        }
-        if ($this->faultCode == 0) {
+        if ($this->pump2 == $value || $this->faultCode !== 3) {
             return;
         }
         if ($value == "High" && $this->pump2 == "Off") {
