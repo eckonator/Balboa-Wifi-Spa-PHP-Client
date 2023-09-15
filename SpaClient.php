@@ -83,7 +83,7 @@ class SpaClient
     private function faultCodeToString($code): string
     {
         if ($code == 0) return "Spa offline";
-        if ($code == 3) return "Spa funktioniert einwandfrei - keine Fehler im Speicher";
+        if ($code == 3) return "Spa OK";
         if ($code == 15) return "Sensoren sind möglicherweise nicht synchronisiert";
         if ($code == 16) return "Geringer Wasserfluss";
         if ($code == 17) return "Kein Wasserfluss";
