@@ -4,7 +4,7 @@
 I use this script to run the heater only, if my pv generator produces enough power.
 
 ### Installation
-Change IP address in index.php on line 4 to the IP address from your balboa spa:
+Change IP address in index.php on line 5 to the IP address from your balboa spa:
 
 ````
 $spaClient = new SpaClient('192.168.178.xxx');

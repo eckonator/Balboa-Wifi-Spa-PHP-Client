@@ -1,9 +1,8 @@
 <?php
-include('SpaClient.php');
-
-$spaClient = new SpaClient('192.168.178.xxx');
-sleep(1);
 header('Content-Type: application/json; charset=utf-8');
+
+include('SpaClient.php');
+$spaClient = new SpaClient('192.168.178.xxx');
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if(isset($_GET['setTemp'])) {
@@ -50,4 +49,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 $spaClient->readAllMsg();
-echo json_encode($spaClient->getStatus());
+echo json_encode($spaClient->getStatusForFhem());
