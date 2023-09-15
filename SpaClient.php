@@ -22,7 +22,7 @@ class SpaClient
     private array $status = [];
     private string $spaIp;
     private int $faultCode = 0;
-    private string $faultMessage = "Spa-Daten wurden noch nicht synchronisiert";
+    private string $faultMessage = "Spa offline";
 
     public function __construct($spaIp)
     {
@@ -75,7 +75,7 @@ class SpaClient
 
     private function faultCodeToString($code): string
     {
-        if ($code == 0) return "Spa-Daten wurden noch nicht synchronisiert";
+        if ($code == 0) return "Spa offline";
         if ($code == 3) return "Spa funktioniert einwandfrei - keine Fehler im Speicher";
         if ($code == 15) return "Sensoren sind möglicherweise nicht synchronisiert";
         if ($code == 16) return "Geringer Wasserfluss";
@@ -263,6 +263,9 @@ class SpaClient
         if ($this->setTemp == $temp) {
             return;
         }
+        if ($this->faultCode == 0) {
+            return;
+        }
         if ($this->tempScale == "Celcius") {
             $dec = $temp * 2;
         } else {
@@ -277,6 +280,9 @@ class SpaClient
         if ($this->light == $value) {
             return;
         }
+        if ($this->faultCode == 0) {
+            return;
+        }
         $this->sendToggleMessage(0x11);
         $this->light = $value;
     }
@@ -284,6 +290,9 @@ class SpaClient
     public function setNewTime($newHour, $newMinute): void
     {
         sleep(1);
+        if ($this->faultCode == 0) {
+            return;
+        }
         $this->newTime = chr(intval($newHour)) . chr(intval($newMinute));
         $this->sendMessage("\x0a\xbf\x21", $this->newTime);
     }
@@ -293,6 +302,9 @@ class SpaClient
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump1 state
         if ($this->pump1 == $value) {
+            return;
+        }
+        if ($this->faultCode == 0) {
             return;
         }
         if ($value == "High" && $this->pump1 == "Off") {
@@ -318,6 +330,9 @@ class SpaClient
         sleep(1);
         $this->readAllMsg(); // Read status first to get current pump2 state
         if ($this->pump2 == $value) {
+            return;
+        }
+        if ($this->faultCode == 0) {
             return;
         }
         if ($value == "High" && $this->pump2 == "Off") {
