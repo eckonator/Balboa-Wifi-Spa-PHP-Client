@@ -61,13 +61,17 @@ class SpaClient
         $this->light = (ord($byteArray[14]) & 0x03) == 0x03;
         if (ord($byteArray[2]) == 255) {
             $this->currentTemp = 0.0;
-            $this->setTemp = 1.0 * ord($byteArray[20]);
+            if ($this->tempScale == 'Celcius') {
+                $this->setTemp = ord($byteArray[20]) / 2.0;
+            } else {
+                $this->setTemp = ord($byteArray[20]);
+            }
         } elseif ($this->tempScale == 'Celcius') {
             $this->currentTemp = ord($byteArray[2]) / 2.0;
             $this->setTemp = ord($byteArray[20]) / 2.0;
         } else {
-            $this->currentTemp = 1.0 * ord($byteArray[2]);
-            $this->setTemp = 1.0 * ord($byteArray[20]);
+            $this->currentTemp = ord($byteArray[2]);
+            $this->setTemp = ord($byteArray[20]);
         }
         $this->faultCode = ord($byteArray[7]);
         $this->faultMessage = $this->faultCodeToString(ord($byteArray[7]));
@@ -263,13 +267,12 @@ class SpaClient
         if ($this->setTemp == $temp || $this->faultCode !== 3) {
             return;
         }
-        if ($this->tempScale == "Celcius") {
-            $dec = $temp * 2;
-        } else {
-            $dec = $temp;
+        if($this->tempScale !== 'Fahrenheit') {
+            $temp = $temp * 2;
         }
-        $this->setTemp = $temp;
-        $this->sendMessage("\x0a\xbf\x20", chr($dec));
+        $this->sendMessage("\x0a\xbf\x20", chr($temp));
+        sleep(1);
+        $this->readAllMsg(); // Read status first to get current temperature state
     }
 
     public function setLight($value): void
@@ -279,7 +282,8 @@ class SpaClient
             return;
         }
         $this->sendToggleMessage(0x11);
-        $this->light = $value;
+        sleep(1);
+        $this->readAllMsg(); // Read status first to get current temperature state
     }
 
     public function setNewTime($newHour, $newMinute): void
@@ -288,8 +292,9 @@ class SpaClient
         if ($this->faultCode !== 3) {
             return;
         }
-        $this->newTime = chr(intval($newHour)) . chr(intval($newMinute));
-        $this->sendMessage("\x0a\xbf\x21", $this->newTime);
+        $this->sendMessage("\x0a\xbf\x21", chr(intval($newHour)) . chr(intval($newMinute)));
+        sleep(1);
+        $this->readAllMsg(); // Read status first to get current temperature state
     }
 
     public function setPump1($value): void
@@ -314,7 +319,8 @@ class SpaClient
         } else {
             $this->sendToggleMessage(0x04);
         }
-        $this->pump1 = $value;
+        sleep(1);
+        $this->readAllMsg(); // Read status first to get current temperature state
     }
 
     public function setPump2($value): void
@@ -339,6 +345,7 @@ class SpaClient
         } else {
             $this->sendToggleMessage(0x05);
         }
-        $this->pump2 = $value;
+        sleep(1);
+        $this->readAllMsg(); // Read status first to get current temperature state
     }
 }
