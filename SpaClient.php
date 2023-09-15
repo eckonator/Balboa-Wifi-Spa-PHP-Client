@@ -27,7 +27,6 @@ class SpaClient
     public function __construct($spaIp)
     {
         $this->spaIp = $spaIp;
-        $this->socket = $this->getSocket();
         $this->readAllMsg();
     }
 
@@ -37,6 +36,7 @@ class SpaClient
             $this->socket = socket_create(AF_INET, SOCK_STREAM, 0);
             socket_connect($this->socket, $this->spaIp, 4257);
             socket_set_nonblock($this->socket);
+            sleep(2);
         }
         return $this->socket;
     }
@@ -59,6 +59,8 @@ class SpaClient
         $this->pump1 = $pumpLabels[$pumpStatus & 0x03];
         $this->pump2 = $pumpLabels[($pumpStatus >> 2) & 0x03];
         $this->light = (ord($byteArray[14]) & 0x03) == 0x03;
+        $this->faultCode = ord($byteArray[7]);
+        $this->faultMessage = $this->faultCodeToString(ord($byteArray[7]));
         if (ord($byteArray[2]) == 255) {
             $this->faultCode = 99;
             $this->faultMessage = $this->faultCodeToString($this->faultCode);
@@ -76,8 +78,6 @@ class SpaClient
             $this->currentTemp = ord($byteArray[2]);
             $this->setTemp = ord($byteArray[20]);
         }
-        $this->faultCode = ord($byteArray[7]);
-        $this->faultMessage = $this->faultCodeToString(ord($byteArray[7]));
     }
 
     private function faultCodeToString($code): string
@@ -240,18 +240,23 @@ class SpaClient
 
     public function readAllMsg(): void
     {
+        $this->socket = $this->getSocket();
         while ($this->readMsg()) {
             continue;
         }
     }
 
-    private function sendMessage($type, $payload): void
+    private function sendMessage($type, $payload, $reread = false): void
     {
         $length = 5 + strlen($payload);
         $checksum = $this->computeChecksum(chr($length), $type . $payload);
         $prefix = "\x7e";
         $message = $prefix . chr($length) . $type . $payload . chr($checksum) . $prefix;
         socket_write($this->socket, $message);
+        if($reread) {
+            sleep(2);
+            $this->readAllMsg(); // Read status first to get current temperature state
+        }
     }
 
     public function sendConfigRequest(): void
@@ -261,12 +266,11 @@ class SpaClient
 
     public function sendToggleMessage($item): void
     {
-        $this->sendMessage("\x0a\xbf\x11", chr($item) . "\x00");
+        $this->sendMessage("\x0a\xbf\x11", chr($item) . "\x00", true);
     }
 
     public function setTemperature(float $temp): void
     {
-        sleep(1);
         $this->readAllMsg(); // Read status first to get current temperature state
         if ($this->setTemp == $temp || $this->faultCode !== 3) {
             return;
@@ -276,8 +280,7 @@ class SpaClient
         } else {
             $dec = $temp;
         }
-        $this->setTemp = $temp;
-        $this->sendMessage("\x0a\xbf\x20", chr($dec));
+        $this->sendMessage("\x0a\xbf\x20", chr($dec), true);
     }
 
     public function setLight($value): void
@@ -287,7 +290,6 @@ class SpaClient
             return;
         }
         $this->sendToggleMessage(0x11);
-        $this->light = $value;
     }
 
     public function setNewTime($newHour, $newMinute): void
@@ -296,13 +298,11 @@ class SpaClient
         if ($this->faultCode !== 3) {
             return;
         }
-        $this->newTime = chr(intval($newHour)) . chr(intval($newMinute));
-        $this->sendMessage("\x0a\xbf\x21", $this->newTime);
+        $this->sendMessage("\x0a\xbf\x21", chr(intval($newHour)) . chr(intval($newMinute)), true);
     }
 
     public function setPump1($value): void
     {
-        sleep(1);
         $this->readAllMsg(); // Read status first to get current pump1 state
         if ($this->pump1 == $value || $this->faultCode !== 3) {
             return;
@@ -322,12 +322,10 @@ class SpaClient
         } else {
             $this->sendToggleMessage(0x04);
         }
-        $this->pump1 = $value;
     }
 
     public function setPump2($value): void
     {
-        sleep(1);
         $this->readAllMsg(); // Read status first to get current pump2 state
         if ($this->pump2 == $value || $this->faultCode !== 3) {
             return;
@@ -347,6 +345,5 @@ class SpaClient
         } else {
             $this->sendToggleMessage(0x05);
         }
-        $this->pump2 = $value;
     }
 }
