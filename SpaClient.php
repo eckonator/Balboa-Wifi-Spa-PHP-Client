@@ -60,19 +60,21 @@ class SpaClient
         $this->pump2 = $pumpLabels[($pumpStatus >> 2) & 0x03];
         $this->light = (ord($byteArray[14]) & 0x03) == 0x03;
         if (ord($byteArray[2]) == 255) {
+            $this->faultCode = 99;
+            $this->faultMessage = $this->faultCodeToString($this->faultCode);
             if ($this->tempScale == 'Celcius') {
                 $this->currentTemp = 0.0;
                 $this->setTemp = ord($byteArray[20]) / 2.0;
             } else {
                 $this->currentTemp = 0.0;
-                $this->setTemp = 1.0 * ord($byteArray[20]);
+                $this->setTemp = ord($byteArray[20]);
             }
         } elseif ($this->tempScale == 'Celcius') {
             $this->currentTemp = ord($byteArray[2]) / 2.0;
             $this->setTemp = ord($byteArray[20]) / 2.0;
         } else {
-            $this->currentTemp = 1.0 * ord($byteArray[2]);
-            $this->setTemp = 1.0 * ord($byteArray[20]);
+            $this->currentTemp = ord($byteArray[2]);
+            $this->setTemp = ord($byteArray[20]);
         }
         $this->faultCode = ord($byteArray[7]);
         $this->faultMessage = $this->faultCodeToString(ord($byteArray[7]));
@@ -101,6 +103,7 @@ class SpaClient
         if ($code == 35) return "Heißer Fehler";
         if ($code == 36) return "Der GFCI-Test ist fehlgeschlagen";
         if ($code == 37) return "Haltemodus aktiviert (dies ist eigentlich kein Fehler)";
+        if ($code == 99) return "Unbekannte Ist-Temperatur";
         return "Unbekannter Fehlercode - Überprüfen Sie die Balboa-Spa-Handbücher";
     }
 
