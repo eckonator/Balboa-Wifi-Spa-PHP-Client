@@ -3,7 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 include('SpaClient.php');
 
-const SPA_IP      = '192.168.178.XXX';
+const SPA_IP      = '192.168.178.xxx';
 define('STATE_FILE', sys_get_temp_dir() . '/spa_state.json');
 const PUMP_LABELS = [0 => 'Off', 1 => 'Low', 2 => 'High'];
 const TARGET_TTL  = 900;  // seconds — give up retrying a target after 15 minutes

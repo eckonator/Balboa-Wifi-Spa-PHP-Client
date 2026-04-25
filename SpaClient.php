@@ -52,10 +52,6 @@ class SpaClient
             return;
         }
         $this->socket = $socket;
-
-        // Announce ourselves as a client — pybalboa sends these immediately after connect.
-        // Without them the spa may treat us as an unknown/untrusted client.
-        $this->requestConfiguration();
     }
 
     // Sends the standard initialisation requests that legitimate Balboa clients send
