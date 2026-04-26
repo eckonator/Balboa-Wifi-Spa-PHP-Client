@@ -52,6 +52,8 @@ class SpaClient
             return;
         }
         $this->socket = $socket;
+        // Send init requests so the spa starts broadcasting status frames
+        $this->requestConfiguration();
     }
 
     // Sends the standard initialisation requests that legitimate Balboa clients send
@@ -83,18 +85,42 @@ class SpaClient
         return $result !== false && $result > 0;
     }
 
+    // Read exactly $n bytes from the socket, looping until all arrive or timeout.
+    private function socketReadExact(int $n): string|false
+    {
+        $buf = '';
+        $remaining = $n;
+        $deadline = microtime(true) + 5.0;
+        while ($remaining > 0 && microtime(true) < $deadline) {
+            $chunk = socket_read($this->socket, $remaining, PHP_BINARY_READ);
+            if ($chunk === false || $chunk === '') {
+                return false;
+            }
+            $buf .= $chunk;
+            $remaining -= strlen($chunk);
+        }
+        return $remaining === 0 ? $buf : false;
+    }
+
     private function readMsg(): bool
     {
         if (!$this->waitForData(500)) {
             return false;
         }
-        $lenChunk = socket_read($this->socket, 2);
-        if ($lenChunk === false || strlen($lenChunk) < 2) {
+        // Read and validate start byte
+        $startByte = $this->socketReadExact(1);
+        if ($startByte === false || ord($startByte) !== 0x7E) {
             return false;
         }
-        $length = ord($lenChunk[1]);
-        $chunk = socket_read($this->socket, $length);
-        if ($chunk === false || strlen($chunk) === 0) {
+        // Read LEN byte
+        $lenByte = $this->socketReadExact(1);
+        if ($lenByte === false) {
+            return false;
+        }
+        $length = ord($lenByte);
+        // Read exactly LEN bytes (TYPE + PAYLOAD + CRC + end-7E)
+        $chunk = $this->socketReadExact($length);
+        if ($chunk === false) {
             return false;
         }
         if (substr($chunk, 0, 3) === "\xff\xaf\x13") {
@@ -256,7 +282,8 @@ class SpaClient
         foreach (str_split($lenBytes . $bytes) as $char) {
             $sum ^= ord($char);
             for ($j = 0; $j < 8; $j++) {
-                $sum = ($sum & 0x80) ? (($sum << 1) ^ 0x07) : ($sum << 1);
+                // & 0xFF is required — PHP integers don't overflow like C bytes do
+                $sum = ($sum & 0x80) ? ((($sum << 1) ^ 0x07) & 0xFF) : (($sum << 1) & 0xFF);
             }
         }
         return $sum ^ 0x02;
@@ -326,7 +353,7 @@ class SpaClient
 
         $this->sendToggleMessage(0x04);
         if ($needsDoubleToggle) {
-            usleep(2000000);
+            usleep(150000);
             $this->sendToggleMessage(0x04);
         }
     }
@@ -343,7 +370,7 @@ class SpaClient
 
         $this->sendToggleMessage(0x05);
         if ($needsDoubleToggle) {
-            usleep(2000000);
+            usleep(150000);
             $this->sendToggleMessage(0x05);
         }
     }
